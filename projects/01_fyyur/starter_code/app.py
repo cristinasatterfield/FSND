@@ -39,6 +39,42 @@ migrate = Migrate(app, db)
 # ----------------------------------------------------------------------------#
 # Models.
 # ----------------------------------------------------------------------------#
+shows = db.Table(
+    "shows",
+    db.Column(
+        "artist_id",
+        db.Integer,
+        db.ForeignKey("artists.id", primary_key=True),
+        nullable=False,
+    ),
+    db.Column(
+        "venue_id",
+        db.Integer,
+        db.ForeignKey("venues.id", primary_key=True),
+        nullable=False,
+    ),
+    db.Column("start_time", db.DateTime(timezone=True), nullable=False),
+)
+
+
+class Artist(db.Model):
+    __tablename__ = "artists"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String, nullable=False)
+    city = db.Column(db.String(120), nullable=False)
+    state = db.Column(db.String(120), nullable=False)
+    phone = db.Column(db.String(120), nullable=False)
+    website_link = db.Column(db.String(120), server_default="", nullable=False)
+    facebook_link = db.Column(db.String(120), server_default="", nullable=False)
+    seeking_venue = db.Column(
+        db.Boolean, nullable=False, server_default="false", default=False
+    )
+    seeking_description = db.Column(db.String(500), nullable=False, server_default="")
+    image_link = db.Column(db.String(500), nullable=False)
+    shows = db.relationship(
+        "Venue", secondary=shows, backref=db.backref("artists", lazy=True)
+    )
 
 
 class Venue(db.Model):
@@ -59,23 +95,6 @@ class Venue(db.Model):
     image_link = db.Column(db.String(500), nullable=False)
 
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
-
-
-class Artist(db.Model):
-    __tablename__ = "artists"
-
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String, nullable=False)
-    city = db.Column(db.String(120), nullable=False)
-    state = db.Column(db.String(120), nullable=False)
-    phone = db.Column(db.String(120), nullable=False)
-    website_link = db.Column(db.String(120), server_default="", nullable=False)
-    facebook_link = db.Column(db.String(120), server_default="", nullable=False)
-    seeking_venue = db.Column(
-        db.Boolean, nullable=False, server_default="false", default=False
-    )
-    seeking_description = db.Column(db.String(500), nullable=False, server_default="")
-    image_link = db.Column(db.String(500), nullable=False)
 
 
 # TODO: implement any missing fields, as a database migration using Flask-Migrate
