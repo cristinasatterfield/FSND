@@ -72,6 +72,22 @@ artists_genres = db.Table(
     ),
 )
 
+venues_genres = db.Table(
+    "venues_genres",
+    db.Column(
+        "venue_id",
+        db.Integer,
+        db.ForeignKey("venues.id", primary_key=True),
+        nullable=False,
+    ),
+    db.Column(
+        "genre_id",
+        db.Integer,
+        db.ForeignKey("genres.id", primary_key=True),
+        nullable=False,
+    ),
+)
+
 
 class Artist(db.Model):
     __tablename__ = "artists"
@@ -112,6 +128,9 @@ class Venue(db.Model):
     )
     seeking_description = db.Column(db.String(500), nullable=False, server_default="")
     image_link = db.Column(db.String(500), nullable=False)
+    genres = db.relationship(
+        "Genre", secondary=venues_genres, backref=db.backref("venues", lazy=True)
+    )
 
 
 class Genre(db.Model):
