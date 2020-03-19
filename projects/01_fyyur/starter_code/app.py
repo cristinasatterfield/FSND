@@ -528,7 +528,13 @@ def edit_venue_submission(venue_id):
 
 @app.route("/artists/create", methods=["GET"])
 def create_artist_form():
+    genres = Genre.query.order_by("name").all()
+    genre_choices = []
+    for genre in genres:
+        choice = (genre.id, genre.name)
+        genre_choices.append(choice)
     form = ArtistForm()
+    form.genres.choices = genre_choices
     return render_template("forms/new_artist.html", form=form)
 
 
