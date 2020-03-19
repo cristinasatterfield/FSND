@@ -94,7 +94,15 @@ class Venue(db.Model):
     seeking_description = db.Column(db.String(500), nullable=False, server_default="")
     image_link = db.Column(db.String(500), nullable=False)
 
-    # TODO: implement any missing fields, as a database migration using Flask-Migrate
+
+class Genre(db.Model):
+    __tablename__ = "genres"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), nullable=False)
+
+
+# TODO: implement any missing fields, as a database migration using Flask-Migrate
 
 
 # TODO: implement any missing fields, as a database migration using Flask-Migrate
