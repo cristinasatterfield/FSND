@@ -56,6 +56,22 @@ shows = db.Table(
     db.Column("start_time", db.DateTime(timezone=True), nullable=False),
 )
 
+artists_genres = db.Table(
+    "artists_genres",
+    db.Column(
+        "artist_id",
+        db.Integer,
+        db.ForeignKey("artists.id", primary_key=True),
+        nullable=False,
+    ),
+    db.Column(
+        "genre_id",
+        db.Integer,
+        db.ForeignKey("genres.id", primary_key=True),
+        nullable=False,
+    ),
+)
+
 
 class Artist(db.Model):
     __tablename__ = "artists"
@@ -74,6 +90,9 @@ class Artist(db.Model):
     image_link = db.Column(db.String(500), nullable=False)
     shows = db.relationship(
         "Venue", secondary=shows, backref=db.backref("artists", lazy=True)
+    )
+    genres = db.relationship(
+        "Genre", secondary=artists_genres, backref=db.backref("artists", lazy=True)
     )
 
 
