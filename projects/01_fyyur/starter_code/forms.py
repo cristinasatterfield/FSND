@@ -78,30 +78,23 @@ class VenueForm(Form):
     genres = SelectMultipleField(
         # TODO implement enum restriction
         "genres",
+        coerce=int,
         validators=[DataRequired()],
-        choices=[
-            ("Alternative", "Alternative"),
-            ("Blues", "Blues"),
-            ("Classical", "Classical"),
-            ("Country", "Country"),
-            ("Electronic", "Electronic"),
-            ("Folk", "Folk"),
-            ("Funk", "Funk"),
-            ("Hip-Hop", "Hip-Hop"),
-            ("Heavy Metal", "Heavy Metal"),
-            ("Instrumental", "Instrumental"),
-            ("Jazz", "Jazz"),
-            ("Musical Theatre", "Musical Theatre"),
-            ("Pop", "Pop"),
-            ("Punk", "Punk"),
-            ("R&B", "R&B"),
-            ("Reggae", "Reggae"),
-            ("Rock n Roll", "Rock n Roll"),
-            ("Soul", "Soul"),
-            ("Other", "Other"),
-        ],
+    )
+    website_link = StringField(
+        # TODO implement enum restriction
+        "website_link",
+        validators=[URL()],
     )
     facebook_link = StringField("facebook_link", validators=[URL()])
+    seeking_talent = SelectField(
+        "seeking_talent",
+        validators=[DataRequired()],
+        choices=[("False", "No"), ("True", "Yes")],
+    )
+    seeking_description = StringField(
+        "seeking_description", validators=[DataRequired()]
+    )
 
 
 class ArtistForm(Form):
@@ -174,27 +167,6 @@ class ArtistForm(Form):
         "genres",
         coerce=int,
         validators=[DataRequired()],
-        # choices=[
-        # ("Alternative", "Alternative"),
-        # ("Blues", "Blues"),
-        # ("Classical", "Classical"),
-        # ("Country", "Country"),
-        # ("Electronic", "Electronic"),
-        # ("Folk", "Folk"),
-        # ("Funk", "Funk"),
-        # ("Hip-Hop", "Hip-Hop"),
-        # ("Heavy Metal", "Heavy Metal"),
-        # ("Instrumental", "Instrumental"),
-        # ("Jazz", "Jazz"),
-        # ("Musical Theatre", "Musical Theatre"),
-        # ("Pop", "Pop"),
-        # ("Punk", "Punk"),
-        # ("R&B", "R&B"),
-        # ("Reggae", "Reggae"),
-        # ("Rock n Roll", "Rock n Roll"),
-        # ("Soul", "Soul"),
-        # ("Other", "Other"),
-        # ],
     )
     website_link = StringField(
         # TODO implement enum restriction
