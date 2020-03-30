@@ -14,6 +14,7 @@ class ShowForm(Form):
 
 class VenueForm(Form):
     name = StringField("name", validators=[DataRequired()])
+    image_link = StringField("image_link", validators=[URL()])
     city = StringField("city", validators=[DataRequired()])
     state = SelectField(
         "state",
