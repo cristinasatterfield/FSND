@@ -41,7 +41,12 @@ def upgrade():
             server_default="",
             nullable=False,
         ),
-        sa.Column("image_link", sa.String(length=500), nullable=False),
+        sa.Column(
+            "image_link",
+            sa.String(length=500),
+            server_default="https://images.all-free-download.com/images/graphiclarge/scene_layout_04_hd_picture_167802.jpg",
+            nullable=False,
+        ),
         sa.PrimaryKeyConstraint("id"),
     )
     # ### end Alembic commands ###
