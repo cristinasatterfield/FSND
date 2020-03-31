@@ -23,6 +23,7 @@ import logging
 from logging import Formatter, FileHandler
 from flask_wtf import Form
 from forms import *
+import sys
 
 # ----------------------------------------------------------------------------#
 # App Config.
@@ -103,7 +104,11 @@ class Artist(db.Model):
         db.Boolean, nullable=False, server_default="false", default=False
     )
     seeking_description = db.Column(db.String(500), nullable=False, server_default="")
-    image_link = db.Column(db.String(500), nullable=False)
+    image_link = db.Column(
+        db.String(500),
+        nullable=False,
+        server_default="https://www.pexels.com/photo/mic-microphone-recording-audio-14166/",
+    )
     shows = db.relationship(
         "Venue", secondary=shows, backref=db.backref("artists", lazy=True)
     )
@@ -127,7 +132,11 @@ class Venue(db.Model):
         db.Boolean, nullable=False, server_default="false", default=False
     )
     seeking_description = db.Column(db.String(500), nullable=False, server_default="")
-    image_link = db.Column(db.String(500), nullable=False)
+    image_link = db.Column(
+        db.String(500),
+        nullable=False,
+        server_default="https://images.all-free-download.com/images/graphiclarge/scene_layout_04_hd_picture_167802.jpg",
+    )
     genres = db.relationship(
         "Genre", secondary=venues_genres, backref=db.backref("venues", lazy=True)
     )
@@ -174,8 +183,9 @@ def index():
     return render_template("pages/home.html")
 
 
-#  Venues
-#  ----------------------------------------------------------------
+# ----------------------------------------------------------------------------#
+# Venues.
+# ----------------------------------------------------------------------------#
 
 
 @app.route("/venues")
@@ -321,21 +331,71 @@ def show_venue(venue_id):
 
 @app.route("/venues/create", methods=["GET"])
 def create_venue_form():
+    genres = Genre.query.order_by("name").all()
+    genre_choices = []
+    for genre in genres:
+        choice = (genre.id, genre.name)
+        genre_choices.append(choice)
     form = VenueForm()
+    form.genres.choices = genre_choices
     return render_template("forms/new_venue.html", form=form)
 
 
 @app.route("/venues/create", methods=["POST"])
 def create_venue_submission():
+    error = False
+    data = request.form
+    body = {}
+    try:
+        name = data["name"]
+        city = data["city"]
+        state = data["state"]
+        address = data["address"]
+        phone = data["phone"]
+        genres = data.getlist("genres")
+        website_link = data["website_link"]
+        facebook_link = data["facebook_link"]
+        seeking_talent = data["seeking_talent"] == "True"
+        seeking_description = data.get("seeking_description")
+        image_link = data["image_link"]
+        new_venue = Venue(
+            name=name,
+            city=city,
+            state=state,
+            address=address,
+            phone=phone,
+            website_link=website_link,
+            facebook_link=facebook_link,
+            seeking_talent=seeking_talent,
+            seeking_description=seeking_description,
+            image_link=image_link,
+        )
+        print(data)
+        print(genres)
+        for genre_id in genres:
+            genre = Genre.query.get(genre_id)
+            new_venue.genres.append(genre)
+        db.session.add(new_venue)
+        db.session.commit()
+    except:
+        error = True
+        db.session.rollback()
+        print(sys.exc_info())
+    finally:
+        db.session.close()
+    if error:
+        flash("An error occurred. Venue " + data["name"] + " could not be listed.")
+    else:
+        flash("Venue " + data["name"] + " was successfully listed!")
+    return render_template("pages/home.html")
     # TODO: insert form data as a new Venue record in the db, instead
     # TODO: modify data to be the data object returned from db insertion
 
     # on successful db insert, flash success
-    flash("Venue " + request.form["name"] + " was successfully listed!")
+
     # TODO: on unsuccessful db insert, flash an error instead.
     # e.g., flash('An error occurred. Venue ' + data.name + ' could not be listed.')
     # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
-    return render_template("pages/home.html")
 
 
 @app.route("/venues/<venue_id>", methods=["DELETE"])
@@ -659,4 +719,3 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
 """
-
