@@ -78,13 +78,13 @@ venues_genres = db.Table(
     db.Column(
         "venue_id",
         db.Integer,
-        db.ForeignKey("venues.id", primary_key=True),
+        db.ForeignKey("venues.id", ondelete="cascade", primary_key=True),
         nullable=False,
     ),
     db.Column(
         "genre_id",
         db.Integer,
-        db.ForeignKey("genres.id", primary_key=True),
+        db.ForeignKey("genres.id", ondelete="cascade", primary_key=True),
         nullable=False,
     ),
 )
@@ -373,7 +373,7 @@ def create_venue_submission():
         print(data)
         print(genres)
         for genre_id in genres:
-            genre = Genre.query.get(genre_id)
+            genre = Genre.query.get(genre_id, lazy=True)
             new_venue.genres.append(genre)
         db.session.add(new_venue)
         db.session.commit()
