@@ -62,13 +62,13 @@ artists_genres = db.Table(
     db.Column(
         "artist_id",
         db.Integer,
-        db.ForeignKey("artists.id", primary_key=True),
+        db.ForeignKey("artists.id", ondelete="cascade", primary_key=True),
         nullable=False,
     ),
     db.Column(
         "genre_id",
         db.Integer,
-        db.ForeignKey("genres.id", primary_key=True),
+        db.ForeignKey("genres.id", ondelete="cascade", primary_key=True),
         nullable=False,
     ),
 )
