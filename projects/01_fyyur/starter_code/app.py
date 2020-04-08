@@ -719,14 +719,19 @@ def create_shows():
         choice = (venue.id, venue.name)
         venue_choices.append(choice)
     form = ShowForm()
-    form.artists.choices = artist_choices
-    form.venues.choices = venue_choices
+    form.artist.choices = artist_choices
+    form.venue.choices = venue_choices
     return render_template("forms/new_show.html", form=form)
 
 
 @app.route("/shows/create", methods=["POST"])
 def create_show_submission():
     # called to create new shows in the db, upon submitting new show listing form
+    # error = False
+    # data = request.form
+    # body = {}
+    # try:
+    #     artist
     # TODO: insert form data as a new Show record in the db, instead
 
     # on successful db insert, flash success

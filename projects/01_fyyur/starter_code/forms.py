@@ -6,15 +6,15 @@ from wtforms.validators import DataRequired, AnyOf, URL
 
 class ShowForm(Form):
     # artist_id = StringField("artist_id")
-    artists = SelectField(
+    artist = SelectField(
         # TODO implement enum restriction
-        "artists",
+        "artist",
         coerce=int,
         validators=[DataRequired()],
     )
-    venues = SelectField(
+    venue = SelectField(
         # TODO implement enum restriction
-        "venues",
+        "venue",
         coerce=int,
         validators=[DataRequired()],
     )
