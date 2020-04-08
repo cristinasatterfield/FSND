@@ -5,8 +5,19 @@ from wtforms.validators import DataRequired, AnyOf, URL
 
 
 class ShowForm(Form):
-    artist_id = StringField("artist_id")
-    venue_id = StringField("venue_id")
+    # artist_id = StringField("artist_id")
+    artists = SelectField(
+        # TODO implement enum restriction
+        "artists",
+        coerce=int,
+        validators=[DataRequired()],
+    )
+    venues = SelectField(
+        # TODO implement enum restriction
+        "venues",
+        coerce=int,
+        validators=[DataRequired()],
+    )
     start_time = DateTimeField(
         "start_time", validators=[DataRequired()], default=datetime.today()
     )
