@@ -23,6 +23,7 @@ import logging
 from logging import Formatter, FileHandler
 from flask_wtf import Form
 from forms import *
+from datetime import datetime
 import sys
 
 # ----------------------------------------------------------------------------#
@@ -34,28 +35,27 @@ moment = Moment(app)
 app.config.from_object("config")
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
-
 # TODO: connect to a local postgresql database
 
 # ----------------------------------------------------------------------------#
 # Models.
 # ----------------------------------------------------------------------------#
-shows = db.Table(
-    "shows",
-    db.Column(
-        "artist_id",
-        db.Integer,
-        db.ForeignKey("artists.id", primary_key=True),
-        nullable=False,
-    ),
-    db.Column(
-        "venue_id",
-        db.Integer,
-        db.ForeignKey("venues.id", primary_key=True),
-        nullable=False,
-    ),
-    db.Column("start_time", db.DateTime(timezone=True), nullable=False),
-)
+# shows = db.Table(
+#     "shows",
+#     db.Column(
+#         "artist_id",
+#         db.Integer,
+#         db.ForeignKey("artists.id", primary_key=True),
+#         nullable=False,
+#     ),
+#     db.Column(
+#         "venue_id",
+#         db.Integer,
+#         db.ForeignKey("venues.id", primary_key=True),
+#         nullable=False,
+#     ),
+#     db.Column("start_time", db.DateTime(timezone=True), nullable=False),
+# )
 
 artists_genres = db.Table(
     "artists_genres",
@@ -90,6 +90,14 @@ venues_genres = db.Table(
 )
 
 
+class Show(db.Model):
+    __tablename__ = "shows"
+    artist_id = db.Column(db.Integer, db.ForeignKey("artists.id"), primary_key=True)
+    venue_id = db.Column(db.Integer, db.ForeignKey("venues.id"), primary_key=True)
+    start_time = db.Column(db.DateTime(timezone=True), nullable=False, primary_key=True)
+    venues = db.relationship("Venue", backref="show")
+
+
 class Artist(db.Model):
     __tablename__ = "artists"
 
@@ -109,9 +117,7 @@ class Artist(db.Model):
         nullable=False,
         server_default="https://www.pexels.com/photo/mic-microphone-recording-audio-14166/",
     )
-    shows = db.relationship(
-        "Venue", secondary=shows, backref=db.backref("artists", lazy=True)
-    )
+    shows = db.relationship("Show", backref="artist")
     genres = db.relationship(
         "Genre", secondary=artists_genres, backref=db.backref("artists", lazy=True)
     )
@@ -727,18 +733,34 @@ def create_shows():
 @app.route("/shows/create", methods=["POST"])
 def create_show_submission():
     # called to create new shows in the db, upon submitting new show listing form
-    # error = False
-    # data = request.form
-    # body = {}
-    # try:
-    #     artist
-    # TODO: insert form data as a new Show record in the db, instead
-
-    # on successful db insert, flash success
-    flash("Show was successfully listed!")
-    # TODO: on unsuccessful db insert, flash an error instead.
-    # e.g., flash('An error occurred. Show could not be listed.')
-    # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
+    error = False
+    data = request.form
+    try:
+        artist = data["artist"]
+        venue = data["venue"]
+        start_time = datetime.strptime(data["start_time"], "%Y-%m-%d %H:%M:%S")
+        new_show = (
+            db.Table("shows")
+            .insert()
+            .values(start_time=start_time, venue_id=venue, artist_id=artist)
+        )
+        # TODO: insert form data as a new Show record in the db, instead
+        db.session.execute(new_show)
+        db.session.commit()
+    except:
+        error = True
+        db.session.rollback()
+        print(sys.exc_info())
+    finally:
+        db.session.close()
+    if error:
+        # TODO: on unsuccessful db insert, flash an error instead.
+        # e.g., flash('An error occurred. Show could not be listed.')
+        # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
+        flash("An error has occured. Show could not be listed.")
+    else:
+        # on successful db insert, flash success
+        flash("Show was successfully listed!")
     return render_template("pages/home.html")
 
 
