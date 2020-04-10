@@ -92,10 +92,14 @@ venues_genres = db.Table(
 
 class Show(db.Model):
     __tablename__ = "shows"
-    artist_id = db.Column(db.Integer, db.ForeignKey("artists.id"), primary_key=True)
-    venue_id = db.Column(db.Integer, db.ForeignKey("venues.id"), primary_key=True)
+    artist_id = db.Column(
+        db.Integer, db.ForeignKey("artists.id", ondelete="cascade"), primary_key=True
+    )
+    venue_id = db.Column(
+        db.Integer, db.ForeignKey("venues.id", ondelete="cascade"), primary_key=True
+    )
     start_time = db.Column(db.DateTime(timezone=True), nullable=False, primary_key=True)
-    venues = db.relationship("Venue", backref="show")
+    venues = db.relationship("Venue", backref=db.backref("show", lazy=True))
 
 
 class Artist(db.Model):
@@ -117,7 +121,7 @@ class Artist(db.Model):
         nullable=False,
         server_default="https://www.pexels.com/photo/mic-microphone-recording-audio-14166/",
     )
-    shows = db.relationship("Show", backref="artist")
+    shows = db.relationship("Show", backref=db.backref("artist", lazy=True))
     genres = db.relationship(
         "Genre", secondary=artists_genres, backref=db.backref("artists", lazy=True)
     )
@@ -736,16 +740,12 @@ def create_show_submission():
     error = False
     data = request.form
     try:
-        artist = data["artist"]
-        venue = data["venue"]
+        artist_id = data["artist"]
+        venue_id = data["venue"]
         start_time = datetime.strptime(data["start_time"], "%Y-%m-%d %H:%M:%S")
-        new_show = (
-            db.Table("shows")
-            .insert()
-            .values(start_time=start_time, venue_id=venue, artist_id=artist)
-        )
+        new_show = Show(artist_id=artist_id, venue_id=venue_id, start_time=start_time)
         # TODO: insert form data as a new Show record in the db, instead
-        db.session.execute(new_show)
+        db.session.add(new_show)
         db.session.commit()
     except:
         error = True
