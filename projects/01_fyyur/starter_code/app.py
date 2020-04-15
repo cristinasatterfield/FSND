@@ -322,8 +322,9 @@ def show_venue(venue_id):
 #  ----------------------------------------------------------------
 
 
-@app.route("/venues/create", methods=["GET"])
-def create_venue_form():
+@app.route("/venues/create", methods=("GET", "POST"))
+def create_venue_submission():
+
     genres = Genre.query.order_by("name").all()
     genre_choices = []
     for genre in genres:
@@ -331,61 +332,61 @@ def create_venue_form():
         genre_choices.append(choice)
     form = VenueForm()
     form.genres.choices = genre_choices
+    print(form.validate())
+    if form.validate_on_submit():
+        error = False
+        data = request.form
+        try:
+            name = data["name"]
+            city = data["city"]
+            state = data["state"]
+            address = data["address"]
+            phone = data["phone"]
+            genres = data.getlist("genres")
+            website_link = data["website_link"]
+            facebook_link = data["facebook_link"]
+            seeking_talent = data["seeking_talent"] == "True"
+            seeking_description = data.get("seeking_description")
+            image_link = data["image_link"]
+            new_venue = Venue(
+                name=name,
+                city=city,
+                state=state,
+                address=address,
+                phone=phone,
+                website_link=website_link,
+                facebook_link=facebook_link,
+                seeking_talent=seeking_talent,
+                seeking_description=seeking_description,
+                image_link=image_link,
+            )
+            for genre_id in genres:
+                genre = Genre.query.get(genre_id)
+                new_venue.genres.append(genre)
+            # TODO: insert form data as a new Venue record in the db, instead
+            db.session.add(new_venue)
+            db.session.commit()
+        except:
+            error = True
+            db.session.rollback()
+            print(sys.exc_info())
+        finally:
+            db.session.close()
+        # TODO: on unsuccessful db insert, flash an error instead.
+        # e.g., flash('An error occurred. Venue ' + data.name + ' could not be listed.')
+        # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
+        if error:
+            flash("An error occurred. Venue " + data["name"] + " could not be listed.")
+        # on successful db insert, flash success
+        else:
+            flash("Venue " + data["name"] + " was successfully listed!")
+        return render_template("pages/home.html")
+    elif request.method == "POST":
+        flash("Failed to create venue.")
+        for fieldName, errorMessages in form.errors.items():
+            for err in errorMessages:
+                flash(err)
     return render_template("forms/new_venue.html", form=form)
-
-
-@app.route("/venues/create", methods=["POST"])
-def create_venue_submission():
-    error = False
-    data = request.form
-    body = {}
-    try:
-        name = data["name"]
-        city = data["city"]
-        state = data["state"]
-        address = data["address"]
-        phone = data["phone"]
-        genres = data.getlist("genres")
-        website_link = data["website_link"]
-        facebook_link = data["facebook_link"]
-        seeking_talent = data["seeking_talent"] == "True"
-        seeking_description = data.get("seeking_description")
-        image_link = data["image_link"]
-        new_venue = Venue(
-            name=name,
-            city=city,
-            state=state,
-            address=address,
-            phone=phone,
-            website_link=website_link,
-            facebook_link=facebook_link,
-            seeking_talent=seeking_talent,
-            seeking_description=seeking_description,
-            image_link=image_link,
-        )
-        print(data)
-        print(genres)
-        for genre_id in genres:
-            genre = Genre.query.get(genre_id)
-            new_venue.genres.append(genre)
-        # TODO: insert form data as a new Venue record in the db, instead
-        db.session.add(new_venue)
-        db.session.commit()
-    except:
-        error = True
-        db.session.rollback()
-        print(sys.exc_info())
-    finally:
-        db.session.close()
-    # TODO: on unsuccessful db insert, flash an error instead.
-    # e.g., flash('An error occurred. Venue ' + data.name + ' could not be listed.')
-    # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
-    if error:
-        flash("An error occurred. Venue " + data["name"] + " could not be listed.")
-    # on successful db insert, flash success
-    else:
-        flash("Venue " + data["name"] + " was successfully listed!")
-    return render_template("pages/home.html")
 
     # TODO: modify data to be the data object returned from db insertion
 
