@@ -33,7 +33,7 @@ class FutureDate(object):
 
     def __call__(self, form, field):
         print("Field data - Future Date", field.data)
-        if field.data < datetime.today():
+        if field.data and field.data < datetime.today():
             raise ValidationError(self.message)
 
 
