@@ -18,6 +18,7 @@ from flask import (
 )
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
+import sqlalchemy.sql.functions as func
 from flask_migrate import Migrate
 import logging
 from logging import Formatter, FileHandler
@@ -142,14 +143,6 @@ class Genre(db.Model):
     name = db.Column(db.String(50), nullable=False)
 
 
-# TODO: implement any missing fields, as a database migration using Flask-Migrate
-
-
-# TODO: implement any missing fields, as a database migration using Flask-Migrate
-
-
-# TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
-
 # ----------------------------------------------------------------------------#
 # Filters.
 # ----------------------------------------------------------------------------#
@@ -183,29 +176,39 @@ def index():
 
 @app.route("/venues")
 def venues():
-    # TODO: replace with real venues data.
-    #       num_shows should be aggregated based on number of upcoming shows per venue.
-    data = [
-        {
-            "city": "San Francisco",
-            "state": "CA",
-            "venues": [
-                {"id": 1, "name": "The Musical Hop", "num_upcoming_shows": 0,},
+    areas = (
+        db.session.query(Venue.city, Venue.state)
+        .group_by(Venue.city)
+        .group_by(Venue.state)
+        .all()
+    )
+
+    data = []
+
+    for area in areas:
+        venues = (
+            db.session.query(Venue.id, Venue.name)
+            .filter(Venue.city == area.city)
+            .filter(Venue.state == area.state)
+            .all()
+        )
+
+        venue_data = []
+        for venue in venues:
+            venue_data.append(
                 {
-                    "id": 3,
-                    "name": "Park Square Live Music & Coffee",
-                    "num_upcoming_shows": 1,
-                },
-            ],
-        },
-        {
-            "city": "New York",
-            "state": "NY",
-            "venues": [
-                {"id": 2, "name": "The Dueling Pianos Bar", "num_upcoming_shows": 0,}
-            ],
-        },
-    ]
+                    '"id': venue.id,
+                    "name": venue.name,
+                    "num_upcoming_shows": db.session.query(Show.venue_id)
+                    .filter(Show.venue_id == venue.id)
+                    .filter(Show.start_time > datetime.today())
+                    .count(),
+                }
+            )
+
+        data.append(
+            {"city": area.city, "state": area.state, "venues": venue_data,}
+        )
     return render_template("pages/venues.html", areas=data)
 
 
@@ -312,14 +315,15 @@ def show_venue(venue_id):
             },
         ],
         "past_shows_count": 1,
-        "upcoming_shows_count": 1,
+        "upcoming_shows_count": 3,
     }
     data = list(filter(lambda d: d["id"] == venue_id, [data1, data2, data3]))[0]
     return render_template("pages/show_venue.html", venue=data)
 
 
+# ----------------------------------------------------------------------------#
 #  Create Venue
-#  ----------------------------------------------------------------
+# ----------------------------------------------------------------------------#
 
 
 @app.route("/venues/create", methods=("GET", "POST"))
@@ -395,8 +399,11 @@ def delete_venue(venue_id):
     return None
 
 
+# ----------------------------------------------------------------------------#
 #  Artists
-#  ----------------------------------------------------------------
+# ----------------------------------------------------------------------------#
+
+
 @app.route("/artists")
 def artists():
     # TODO: replace with real data returned from querying the database
@@ -511,8 +518,9 @@ def show_artist(artist_id):
     return render_template("pages/show_artist.html", artist=data)
 
 
+# ----------------------------------------------------------------------------#
 #  Update
-#  ----------------------------------------------------------------
+# ----------------------------------------------------------------------------#
 @app.route("/artists/<int:artist_id>/edit", methods=["GET"])
 def edit_artist(artist_id):
     form = ArtistForm()
@@ -569,8 +577,9 @@ def edit_venue_submission(venue_id):
     return redirect(url_for("show_venue", venue_id=venue_id))
 
 
+# ----------------------------------------------------------------------------#
 #  Create Artist
-#  ----------------------------------------------------------------
+# ----------------------------------------------------------------------------#
 
 
 @app.route("/artists/create", methods=["GET", "POST"])
@@ -636,8 +645,9 @@ def create_artist_submission():
     # TODO: modify data to be the data object returned from db insertion
 
 
+# ----------------------------------------------------------------------------#
 #  Shows
-#  ----------------------------------------------------------------
+# ----------------------------------------------------------------------------#
 
 
 @app.route("/shows")
