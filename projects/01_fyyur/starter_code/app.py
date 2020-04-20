@@ -182,9 +182,7 @@ def venues():
         .group_by(Venue.state)
         .all()
     )
-
     data = []
-
     for area in areas:
         venues = (
             db.session.query(Venue.id, Venue.name)
@@ -192,12 +190,11 @@ def venues():
             .filter(Venue.state == area.state)
             .all()
         )
-
         venue_data = []
         for venue in venues:
             venue_data.append(
                 {
-                    '"id': venue.id,
+                    "id": venue.id,
                     "name": venue.name,
                     "num_upcoming_shows": db.session.query(Show.venue_id)
                     .filter(Show.venue_id == venue.id)
@@ -205,10 +202,10 @@ def venues():
                     .count(),
                 }
             )
-
         data.append(
             {"city": area.city, "state": area.state, "venues": venue_data,}
         )
+    print(data)
     return render_template("pages/venues.html", areas=data)
 
 
