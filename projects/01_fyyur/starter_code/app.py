@@ -539,22 +539,36 @@ def edit_artist_submission(artist_id):
 
 @app.route("/venues/<int:venue_id>/edit", methods=["GET"])
 def edit_venue(venue_id):
-    form = VenueForm()
-    venue = {
-        "id": 1,
-        "name": "The Musical Hop",
-        "genres": ["Jazz", "Reggae", "Swing", "Classical", "Folk"],
-        "address": "1015 Folsom Street",
-        "city": "San Francisco",
-        "state": "CA",
-        "phone": "123-123-1234",
-        "website": "https://www.themusicalhop.com",
-        "facebook_link": "https://www.facebook.com/TheMusicalHop",
-        "seeking_talent": True,
-        "seeking_description": "We are on the lookout for a local artist to play every two weeks. Please call us.",
-        "image_link": "https://images.unsplash.com/photo-1543900694-133f37abaaa5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=400&q=60",
-    }
-    # TODO: populate form with values from venue with ID <venue_id>
+    genres = Genre.query.order_by("name").all()
+    genre_choices = []
+    for genre in genres:
+        choice = (genre.id, genre.name)
+        genre_choices.append(choice)
+    venue_query = db.session.query(Venue).filter(Venue.id == venue_id).first()
+    if not venue_query:
+        return render_template("errors/404.html"), 404
+    else:
+        genre_list = []
+        for genre in venue_query.genres:
+            genre_list.append(genre.id)
+
+        venue = {
+            "id": venue_query.id,
+            "name": venue_query.name,
+            "genres": genre_list,
+            "address": venue_query.address,
+            "city": venue_query.address,
+            "state": venue_query.state,
+            "phone": venue_query.phone,
+            "website": venue_query.website_link,
+            "facebook_link": venue_query.facebook_link,
+            "seeking_talent": venue_query.seeking_talent,
+            "seeking_description": venue_query.seeking_description,
+            "image_link": venue_query.image_link,
+        }
+
+    form = VenueForm(data=venue)
+    form.genres.choices = genre_choices
     return render_template("forms/edit_venue.html", form=form, venue=venue)
 
 
