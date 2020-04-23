@@ -159,6 +159,58 @@ def format_datetime(value, format="medium"):
 
 app.jinja_env.filters["datetime"] = format_datetime
 
+
+# ----------------------------------------------------------------------------#
+# Utils
+# ----------------------------------------------------------------------------#
+
+
+def build_genres_choices(genres):
+    """
+    Build genre id and name pair for form validation.
+
+    We need this to dynamically load genre options from the database into the frontend.
+    """
+    genre_choices = []
+    for genre in genres:
+        choice = (genre.id, genre.name)
+        genre_choices.append(choice)
+    return genre_choices
+
+
+def add_genres_to_venue(genre_ids, venue):
+    """
+    Loads genres by ID and associates them with a venue object.
+    """
+    for genre_id in genre_ids:
+        genre = Genre.query.get(genre_id)
+        venue.genres.append(genre)
+
+
+def build_venue_from_form(venue_form, venue):
+    venue.name = venue_form["name"]
+    venue.city = venue_form["city"]
+    venue.state = venue_form["state"]
+    venue.address = venue_form["address"]
+    venue.phone = venue_form["phone"]
+    venue.website_link = venue_form["website_link"]
+    venue.facebook_link = venue_form["facebook_link"]
+    venue.seeking_talent = venue_form["seeking_talent"] == "True"
+    venue.seeking_description = venue_form.get("seeking_description")
+    venue.image_link = venue_form["image_link"]
+
+    genre_ids = venue_form.getlist("genres")
+    add_genres_to_venue(genre_ids, venue)
+    return venue
+
+
+def flash_form_errors(form, message):
+    flash(message)
+    for fieldName, errorMessages in form.errors.items():
+        for err in errorMessages:
+            flash(err)
+
+
 # ----------------------------------------------------------------------------#
 # Controllers.
 # ----------------------------------------------------------------------------#
@@ -167,6 +219,11 @@ app.jinja_env.filters["datetime"] = format_datetime
 @app.route("/")
 def index():
     return render_template("pages/home.html")
+
+
+# ----------------------------------------------------------------------------#
+# Temp
+# ----------------------------------------------------------------------------#
 
 
 # ----------------------------------------------------------------------------#
@@ -312,67 +369,45 @@ def show_venue(venue_id):
 # ----------------------------------------------------------------------------#
 
 
-@app.route("/venues/create", methods=("GET", "POST"))
-def create_venue_submission():
+@app.route("/venues/create", methods=["GET"])
+def create_venue_form():
     genres = Genre.query.order_by("name").all()
-    genre_choices = []
-    for genre in genres:
-        choice = (genre.id, genre.name)
-        genre_choices.append(choice)
+    genre_choices = build_genres_choices(genres)
+
     form = VenueForm()
     form.genres.choices = genre_choices
-    if form.validate_on_submit():
-        error = False
-        data = request.form
-        try:
-            name = data["name"]
-            city = data["city"]
-            state = data["state"]
-            address = data["address"]
-            phone = data["phone"]
-            genres = data.getlist("genres")
-            website_link = data["website_link"]
-            facebook_link = data["facebook_link"]
-            seeking_talent = data["seeking_talent"] == "True"
-            seeking_description = data.get("seeking_description")
-            image_link = data["image_link"]
-            new_venue = Venue(
-                name=name,
-                city=city,
-                state=state,
-                address=address,
-                phone=phone,
-                website_link=website_link,
-                facebook_link=facebook_link,
-                seeking_talent=seeking_talent,
-                seeking_description=seeking_description,
-                image_link=image_link,
-            )
-            for genre_id in genres:
-                genre = Genre.query.get(genre_id)
-                new_venue.genres.append(genre)
-            db.session.add(new_venue)
-            db.session.commit()
-        except:
-            error = True
-            db.session.rollback()
-            print(sys.exc_info())
-        finally:
-            db.session.close()
-        if error:
-            flash("An error occurred. Venue " + data["name"] + " could not be listed.")
-        # on successful db insert, flash success
-        else:
-            flash("Venue " + data["name"] + " was successfully listed!")
-        return render_template("pages/home.html")
-    elif request.method == "POST":
-        flash("Failed to create venue.")
-        for fieldName, errorMessages in form.errors.items():
-            for err in errorMessages:
-                flash(err)
     return render_template("forms/new_venue.html", form=form)
 
-    # TODO: modify data to be the data object returned from db insertion
+
+@app.route("/venues/create", methods=["POST"])
+def create_venue_submission():
+    genres = Genre.query.order_by("name").all()
+    genre_choices = build_genres_choices(genres)
+
+    form = VenueForm()
+    form.genres.choices = genre_choices
+
+    if not form.validate_on_submit():
+        flash_form_errors(form, "Failed to create venue.")
+        return render_template("forms/new_venue.html", form=form)
+
+    data = request.form
+    try:
+        new_venue = Venue()
+        build_venue_from_form(data, new_venue)
+        db.session.add(new_venue)
+        db.session.commit()
+
+        flash("Venue " + data["name"] + " was successfully listed!")
+    except:
+        db.session.rollback()
+        print(sys.exc_info())
+
+        flash("An error occurred. Venue " + data["name"] + " could not be listed.")
+    finally:
+        db.session.close()
+
+    return render_template("pages/home.html")
 
 
 @app.route("/venues/<venue_id>", methods=["DELETE"])
@@ -537,7 +572,7 @@ def edit_artist_submission(artist_id):
     return redirect(url_for("show_artist", artist_id=artist_id))
 
 
-@app.route("/venues/<int:venue_id>/edit", methods=["GET"])
+@app.route("/venues/<int:venue_id>/edit", methods=["GET", "POST"])
 def edit_venue(venue_id):
     genres = Genre.query.order_by("name").all()
     genre_choices = []
@@ -560,23 +595,61 @@ def edit_venue(venue_id):
             "city": venue_query.address,
             "state": venue_query.state,
             "phone": venue_query.phone,
-            "website": venue_query.website_link,
+            "website_link": venue_query.website_link,
             "facebook_link": venue_query.facebook_link,
             "seeking_talent": venue_query.seeking_talent,
             "seeking_description": venue_query.seeking_description,
             "image_link": venue_query.image_link,
         }
-
     form = VenueForm(data=venue)
     form.genres.choices = genre_choices
+
+    if form.validate_on_submit():
+        error = False
+        data = request.form
+        try:
+            seeking_description = data.get("seeking_description")
+            if seeking_description:
+                venue_query.seeking_description = seeking_description
+
+            venue_query.name = data["name"]
+            venue_query.city = data["city"]
+            venue_query.state = data["state"]
+            venue_query.address = data["address"]
+            venue_query.phone = data["phone"]
+            venue_query.website_link = data["website_link"]
+            venue_query.facebook_link = data["facebook_link"]
+            venue_query.seeking_talent = data["seeking_talent"] == "True"
+            venue_query.image_link = data["image_link"]
+            venue_query.genres = []
+
+            genres = data.getlist("genres")
+            for genre_id in genres:
+                genre = Genre.query.get(genre_id)
+                venue_query.genres.append(genre)
+            db.session.commit()
+        except:
+            error = True
+            db.session.rollback()
+            print(sys.exc_info())
+        finally:
+            db.session.close()
+        if error:
+            flash(
+                "An error occurred. Venue '"
+                + venue_query.name
+                + "' could not be updated."
+            )
+        # on successful db update, flash success
+        else:
+            flash("Venue '" + data["name"] + "' was successfully updated!")
+        return redirect(url_for("show_venue", venue_id=venue_id))
+    elif request.method == "POST":
+        flash("Failed to update venue.")
+        for fieldName, errorMessages in form.errors.items():
+            for err in errorMessages:
+                flash(err)
     return render_template("forms/edit_venue.html", form=form, venue=venue)
-
-
-@app.route("/venues/<int:venue_id>/edit", methods=["POST"])
-def edit_venue_submission(venue_id):
-    # TODO: take values from the form submitted, and update existing
-    # venue record with ID <venue_id> using the new attributes
-    return redirect(url_for("show_venue", venue_id=venue_id))
 
 
 # ----------------------------------------------------------------------------#
