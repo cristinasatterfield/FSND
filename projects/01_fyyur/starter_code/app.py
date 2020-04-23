@@ -237,6 +237,7 @@ def venues():
         db.session.query(Venue.city, Venue.state)
         .group_by(Venue.city)
         .group_by(Venue.state)
+        .order_by(Venue.city)
         .all()
     )
     data = []
@@ -592,7 +593,7 @@ def edit_venue(venue_id):
             "name": venue_query.name,
             "genres": genre_list,
             "address": venue_query.address,
-            "city": venue_query.address,
+            "city": venue_query.city,
             "state": venue_query.state,
             "phone": venue_query.phone,
             "website_link": venue_query.website_link,
