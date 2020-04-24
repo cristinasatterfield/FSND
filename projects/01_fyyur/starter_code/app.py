@@ -259,6 +259,16 @@ def get_num_upcoming_shows_by_venue(venue):
     )
 
 
+def get_shows_at_venue(venue):
+    return (
+        db.session.query(
+            Show.artist_id, Artist.name, Artist.image_link, Show.start_time
+        )
+        .join(Artist)
+        .filter(Show.venue_id == venue.id)
+    )
+
+
 # ----------------------------------------------------------------------------#
 # Controllers
 # ----------------------------------------------------------------------------#
@@ -352,66 +362,50 @@ def show_venue(venue_id):
     venue = db.session.query(Venue).filter(Venue.id == venue_id).first()
     if not venue:
         return render_template("errors/404.html"), 404
-    else:
-        venue_shows = (
-            db.session.query(
-                Show.artist_id, Artist.name, Artist.image_link, Show.start_time
-            )
-            .join(Artist)
-            .filter(Show.venue_id == venue.id)
-        )
 
-        genre_list = []
-        for genre in venue.genres:
-            genre_list.append(
-                db.session.query(Genre.name).filter(Genre.id == genre.id).first().name
-            )
+    venue_shows = get_shows_at_venue(venue)
 
-        upcoming_shows = []
-        past_shows = []
-        for show in venue_shows:
-            if show.start_time > datetime.now(timezone.utc):
-                upcoming_shows.append(
-                    {
-                        "artist_id": show.artist_id,
-                        "artist_name": show.name,
-                        "artist_image_link": show.image_link,
-                        "start_time": show.start_time.strftime("%m/%d/%y, %H:%M"),
-                    }
-                )
-            else:
-                past_shows.append(
-                    {
-                        "artist_id": show.artist_id,
-                        "artist_name": show.name,
-                        "artist_image_link": show.image_link,
-                        "start_time": show.start_time.strftime("%m/%d/%y, %H:%M"),
-                    }
-                )
+    genre_list = []
+    for genre in venue.genres:
+        genre_list.append(genre.name)
 
-        data = {
-            "id": venue.id,
-            "name": venue.name,
-            "genres": genre_list,
-            "address": venue.address,
-            "city": venue.city,
-            "state": venue.state,
-            "phone": venue.phone,
-            "website": venue.website_link,
-            "facebook_link": venue.facebook_link,
-            "seeking_talent": venue.seeking_talent,
-            "seeking_description": venue.seeking_description,
-            "image_link": venue.image_link,
-            "past_shows": past_shows,
-            "upcoming_shows": upcoming_shows,
-            "past_shows_count": venue_shows.filter(
-                Show.start_time <= datetime.today()
-            ).count(),
-            "upcoming_shows_count": venue_shows.filter(
-                Show.start_time > datetime.today()
-            ).count(),
+    upcoming_shows = []
+    past_shows = []
+    for show in venue_shows:
+        show_details = {
+            "artist_id": show.artist_id,
+            "artist_name": show.name,
+            "artist_image_link": show.image_link,
+            "start_time": show.start_time.strftime("%m/%d/%y, %H:%M"),
         }
-        return render_template("pages/show_venue.html", venue=data)
+        if show.start_time > datetime.now(timezone.utc):
+            upcoming_shows.append(show_details)
+        else:
+            past_shows.append(show_details)
+
+    past_shows_count = venue_shows.filter(Show.start_time <= datetime.today()).count()
+    upcoming_shows_count = venue_shows.filter(
+        Show.start_time > datetime.today()
+    ).count()
+    data = {
+        "id": venue.id,
+        "name": venue.name,
+        "genres": genre_list,
+        "address": venue.address,
+        "city": venue.city,
+        "state": venue.state,
+        "phone": venue.phone,
+        "website": venue.website_link,
+        "facebook_link": venue.facebook_link,
+        "seeking_talent": venue.seeking_talent,
+        "seeking_description": venue.seeking_description,
+        "image_link": venue.image_link,
+        "past_shows": past_shows,
+        "upcoming_shows": upcoming_shows,
+        "past_shows_count": past_shows_count,
+        "upcoming_shows_count": upcoming_shows_count,
+    }
+    return render_template("pages/show_venue.html", venue=data)
 
 
 # ----------------------------------------------------------------------------#
