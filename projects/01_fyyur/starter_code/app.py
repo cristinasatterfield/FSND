@@ -177,13 +177,13 @@ def build_genres_choices(genres):
     return genre_choices
 
 
-def add_genres_to_venue(genre_ids, venue):
+def add_genres_to_model(genre_ids, model):
     """
-    Loads genres by ID and associates them with a venue object.
+    Loads genres by ID and associates them with a model.
     """
     for genre_id in genre_ids:
         genre = Genre.query.get(genre_id)
-        venue.genres.append(genre)
+        model.genres.append(genre)
 
 
 def build_venue_from_form(venue_form, venue):
@@ -199,8 +199,24 @@ def build_venue_from_form(venue_form, venue):
     venue.image_link = venue_form["image_link"]
 
     genre_ids = venue_form.getlist("genres")
-    add_genres_to_venue(genre_ids, venue)
+    add_genres_to_model(genre_ids, venue)
     return venue
+
+
+def build_artist_from_form(artist_form, artist):
+    artist.name = artist_form["name"]
+    artist.city = artist_form["city"]
+    artist.state = artist_form["state"]
+    artist.phone = artist_form["phone"]
+    artist.website_link = artist_form["website_link"]
+    artist.facebook_link = artist_form["facebook_link"]
+    artist.seeking_venue = artist_form["seeking_venue"] == "True"
+    artist.seeking_description = artist_form.get("seeking_description")
+    artist.image_link = artist_form["image_link"]
+
+    genre_ids = artist_form.getlist("genres")
+    add_genres_to_model(genre_ids, artist)
+    return artist
 
 
 def flash_form_errors(form, message):
@@ -211,7 +227,7 @@ def flash_form_errors(form, message):
 
 
 # ----------------------------------------------------------------------------#
-# Controllers.
+# Controllers
 # ----------------------------------------------------------------------------#
 
 
@@ -520,67 +536,45 @@ def delete_venue(venue_id):
 # ----------------------------------------------------------------------------#
 
 
-@app.route("/artists/create", methods=["GET", "POST"])
-def create_artist_submission():
+@app.route("/artists/create", methods=["GET"])
+def create_artist_form():
     genres = Genre.query.order_by("name").all()
-    genre_choices = []
-    for genre in genres:
-        choice = (genre.id, genre.name)
-        genre_choices.append(choice)
+    genre_choices = build_genres_choices(genres)
+
     form = ArtistForm()
     form.genres.choices = genre_choices
-    if form.validate_on_submit():
-        error = False
-        data = request.form
-        try:
-            name = data["name"]
-            city = data["city"]
-            state = data["state"]
-            phone = data["phone"]
-            genres = data.getlist("genres")
-            website_link = data["website_link"]
-            facebook_link = data["facebook_link"]
-            seeking_venue = data["seeking_venue"] == "True"
-            seeking_description = data.get("seeking_description")
-            image_link = data["image_link"]
-            new_artist = Artist(
-                name=name,
-                city=city,
-                state=state,
-                phone=phone,
-                website_link=website_link,
-                facebook_link=facebook_link,
-                seeking_venue=seeking_venue,
-                seeking_description=seeking_description,
-                image_link=image_link,
-            )
-            for genre_id in genres:
-                genre = Genre.query.get(genre_id)
-                new_artist.genres.append(genre)
-            db.session.add(new_artist)
-            db.session.commit()
-        except:
-            error = True
-            db.session.rollback()
-            print(sys.exc_info())
-        finally:
-            db.session.close()
-        if error:
-            flash(
-                "An error has occured. Artist " + data["name"] + " could not be listed."
-            )
-        # on successful db insert, flash success
-        else:
-            flash("Artist " + data["name"] + " was successfully listed!")
-        return render_template("pages/home.html")
-    elif request.method == "POST":
-        flash("Failed to create artist.")
-        for fieldName, errorMessages in form.errors.items():
-            for err in errorMessages:
-                flash(err)
     return render_template("forms/new_artist.html", form=form)
 
-    # TODO: modify data to be the data object returned from db insertion
+
+@app.route("/artists/create", methods=["POST"])
+def create_artist_submission():
+    genres = Genre.query.order_by("name").all()
+    genre_choices = build_genres_choices(genres)
+
+    form = ArtistForm()
+    form.genres.choices = genre_choices
+
+    if not form.validate_on_submit():
+        flash_form_errors(form, "Failed to create artist.")
+        return render_template("forms/new_artist.html", form=form)
+
+    data = request.form
+    try:
+        new_artist = Artist()
+        build_artist_from_form(data, new_artist)
+        db.session.add(new_artist)
+        db.session.commit()
+
+        flash("Artist " + data["name"] + " was successfully listed!")
+    except:
+        db.session.rollback()
+        print(sys.exc_info())
+
+        flash("An error has occured. Artist " + data["name"] + " could not be listed.")
+    finally:
+        db.session.close()
+
+    return render_template("pages/home.html")
 
 
 # ----------------------------------------------------------------------------#
