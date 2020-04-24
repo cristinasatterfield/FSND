@@ -227,6 +227,39 @@ def flash_form_errors(form, message):
 
 
 # ----------------------------------------------------------------------------#
+# Repository
+# ----------------------------------------------------------------------------#
+
+
+def get_areas_by_city_state():
+    return (
+        db.session.query(Venue.city, Venue.state)
+        .group_by(Venue.city)
+        .group_by(Venue.state)
+        .order_by(Venue.city)
+        .all()
+    )
+
+
+def get_venues_in_area(area):
+    return (
+        db.session.query(Venue.id, Venue.name)
+        .filter(Venue.city == area.city)
+        .filter(Venue.state == area.state)
+        .all()
+    )
+
+
+def get_num_upcoming_shows_by_venue(venue):
+    return (
+        db.session.query(Show.venue_id)
+        .filter(Show.venue_id == venue.id)
+        .filter(Show.start_time > datetime.today())
+        .count()
+    )
+
+
+# ----------------------------------------------------------------------------#
 # Controllers
 # ----------------------------------------------------------------------------#
 
@@ -292,33 +325,19 @@ def create_venue_submission():
 # ----------------------------------------------------------------------------#
 
 
-@app.route("/venues")
+@app.route("/venues", methods=["GET"])
 def venues():
-    areas = (
-        db.session.query(Venue.city, Venue.state)
-        .group_by(Venue.city)
-        .group_by(Venue.state)
-        .order_by(Venue.city)
-        .all()
-    )
+    areas = get_areas_by_city_state()
     data = []
     for area in areas:
-        venues = (
-            db.session.query(Venue.id, Venue.name)
-            .filter(Venue.city == area.city)
-            .filter(Venue.state == area.state)
-            .all()
-        )
+        venues = get_venues_in_area(area)
         venue_data = []
         for venue in venues:
             venue_data.append(
                 {
                     "id": venue.id,
                     "name": venue.name,
-                    "num_upcoming_shows": db.session.query(Show.venue_id)
-                    .filter(Show.venue_id == venue.id)
-                    .filter(Show.start_time > datetime.today())
-                    .count(),
+                    "num_upcoming_shows": get_num_upcoming_shows_by_venue(venue),
                 }
             )
         data.append(
@@ -327,7 +346,7 @@ def venues():
     return render_template("pages/venues.html", areas=data)
 
 
-@app.route("/venues/<int:venue_id>")
+@app.route("/venues/<int:venue_id>", methods=["GET"])
 def show_venue(venue_id):
     # shows the venue page with the given venue_id
     venue = db.session.query(Venue).filter(Venue.id == venue_id).first()
