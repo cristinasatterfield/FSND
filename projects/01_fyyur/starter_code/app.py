@@ -319,6 +319,86 @@ def index():
 # ----------------------------------------------------------------------------#
 
 
+# @app.route("/venues/<int:venue_id>/edit", methods=["GET", "POST"])
+# def edit_venue(venue_id):
+#     genres = Genre.query.order_by("name").all()
+#     genre_choices = []
+#     for genre in genres:
+#         choice = (genre.id, genre.name)
+#         genre_choices.append(choice)
+#     venue_query = db.session.query(Venue).filter(Venue.id == venue_id).first()
+#     if not venue_query:
+#         return render_template("errors/404.html"), 404
+#     else:
+#         genre_list = []
+#         for genre in venue_query.genres:
+#             genre_list.append(genre.id)
+
+#         venue = {
+#             "id": venue_query.id,
+#             "name": venue_query.name,
+#             "genres": genre_list,
+#             "address": venue_query.address,
+#             "city": venue_query.city,
+#             "state": venue_query.state,
+#             "phone": venue_query.phone,
+#             "website_link": venue_query.website_link,
+#             "facebook_link": venue_query.facebook_link,
+#             "seeking_talent": venue_query.seeking_talent,
+#             "seeking_description": venue_query.seeking_description,
+#             "image_link": venue_query.image_link,
+#         }
+#     form = VenueForm(data=venue)
+#     form.genres.choices = genre_choices
+
+#     if form.validate_on_submit():
+#         error = False
+#         data = request.form
+#         try:
+#             seeking_description = data.get("seeking_description")
+#             if seeking_description:
+#                 venue_query.seeking_description = seeking_description
+
+#             venue_query.name = data["name"]
+#             venue_query.city = data["city"]
+#             venue_query.state = data["state"]
+#             venue_query.address = data["address"]
+#             venue_query.phone = data["phone"]
+#             venue_query.website_link = data["website_link"]
+#             venue_query.facebook_link = data["facebook_link"]
+#             venue_query.seeking_talent = data["seeking_talent"] == "True"
+#             venue_query.image_link = data["image_link"]
+#             venue_query.genres = []
+
+#             genres = data.getlist("genres")
+#             for genre_id in genres:
+#                 genre = Genre.query.get(genre_id)
+#                 venue_query.genres.append(genre)
+#             db.session.commit()
+#         except:
+#             error = True
+#             db.session.rollback()
+#             print(sys.exc_info())
+#         finally:
+#             db.session.close()
+#         if error:
+#             flash(
+#                 "An error occurred. Venue '"
+#                 + venue_query.name
+#                 + "' could not be updated."
+#             )
+#         # on successful db update, flash success
+#         else:
+#             flash("Venue '" + data["name"] + "' was successfully updated!")
+#         return redirect(url_for("show_venue", venue_id=venue_id))
+#     elif request.method == "POST":
+#         flash("Failed to update venue.")
+#         for fieldName, errorMessages in form.errors.items():
+#             for err in errorMessages:
+#                 flash(err)
+#     return render_template("forms/edit_venue.html", form=form, venue=venue)
+
+
 # ----------------------------------------------------------------------------#
 #  Create Venues
 # ----------------------------------------------------------------------------#
@@ -460,10 +540,42 @@ def search_venues():
 # ----------------------------------------------------------------------------#
 # Update Venues
 # ----------------------------------------------------------------------------#
+@app.route("/venues/<int:venue_id>/edit", methods=["GET"])
+def edit_venue_form(venue_id):
+    venue_query = db.session.query(Venue).filter(Venue.id == venue_id).first()
+
+    if not venue_query:
+        return render_template("errors/404.html"), 404
+
+    genre_list = []
+    for genre in venue_query.genres:
+        genre_list.append(genre.id)
+
+    venue_data = {
+        "id": venue_query.id,
+        "name": venue_query.name,
+        "genres": genre_list,
+        "address": venue_query.address,
+        "city": venue_query.city,
+        "state": venue_query.state,
+        "phone": venue_query.phone,
+        "website_link": venue_query.website_link,
+        "facebook_link": venue_query.facebook_link,
+        "seeking_talent": venue_query.seeking_talent,
+        "seeking_description": venue_query.seeking_description,
+        "image_link": venue_query.image_link,
+    }
+
+    form = VenueForm(data=venue_data)
+
+    genres = Genre.query.order_by("name").all()
+    form.genres.choices = build_genres_choices(genres)
+
+    return render_template("forms/edit_venue.html", form=form, venue=venue_data)
 
 
-@app.route("/venues/<int:venue_id>/edit", methods=["GET", "POST"])
-def edit_venue(venue_id):
+@app.route("/venues/<int:venue_id>/edit", methods=["POST"])
+def edit_venue_submission(venue_id):
     genres = Genre.query.order_by("name").all()
     genre_choices = []
     for genre in genres:
