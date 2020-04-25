@@ -304,6 +304,19 @@ def get_shows_by_artist(artist):
     )
 
 
+def build_artist_data_short(artists):
+    artist_data = []
+    for artist in artists:
+        artist_data.append(
+            {
+                "id": artist.id,
+                "name": artist.name,
+                "num_upcoming_shows": get_num_upcoming_shows_by_artist(artist),
+            }
+        )
+    return artist_data
+
+
 # ----------------------------------------------------------------------------#
 # Controllers
 # ----------------------------------------------------------------------------#
@@ -690,23 +703,11 @@ def search_artists():
         Artist.name.ilike(f"%{search_term}%")
     )
 
-    artist_data = []
-    for artist in artists:
-        artist_data.append(
-            {
-                "id": artist.id,
-                "name": artist.name,
-                "num_upcoming_shows": db.session.query(Show.artist_id)
-                .filter(Show.artist_id == artist.id)
-                .filter(Show.start_time > datetime.today())
-                .count(),
-            }
-        )
-
     response = {
         "count": artists.count(),
-        "data": artist_data,
+        "data": build_artist_data_short(artists),
     }
+
     return render_template(
         "pages/search_artists.html",
         results=response,
