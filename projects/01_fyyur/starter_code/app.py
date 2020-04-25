@@ -227,7 +227,7 @@ def flash_form_errors(form, message):
 
 
 # ----------------------------------------------------------------------------#
-# Repository
+# Venue Repository
 # ----------------------------------------------------------------------------#
 
 
@@ -266,6 +266,28 @@ def get_shows_at_venue(venue):
         )
         .join(Artist)
         .filter(Show.venue_id == venue.id)
+    )
+
+
+# ----------------------------------------------------------------------------#
+# Artist Repository
+# ----------------------------------------------------------------------------#
+
+
+def get_num_upcoming_shows_by_artist(artist):
+    return (
+        db.session.query(Show.artist_id)
+        .filter(Show.artist_id == artist.id)
+        .filter(Show.start_time > datetime.today())
+        .count()
+    )
+
+
+def get_shows_by_artist(artist):
+    return (
+        db.session.query(Show.venue_id, Venue.name, Venue.image_link, Show.start_time)
+        .join(Venue)
+        .filter(Show.artist_id == artist.id)
     )
 
 
@@ -358,7 +380,6 @@ def venues():
 
 @app.route("/venues/<int:venue_id>", methods=["GET"])
 def show_venue(venue_id):
-    # shows the venue page with the given venue_id
     venue = db.session.query(Venue).filter(Venue.id == venue_id).first()
     if not venue:
         return render_template("errors/404.html"), 404
@@ -605,10 +626,7 @@ def artists():
             {
                 "id": artist.id,
                 "name": artist.name,
-                "num_upcoming_shows": db.session.query(Show.artist_id)
-                .filter(Show.artist_id == artist.id)
-                .filter(Show.start_time > datetime.today())
-                .count(),
+                "num_upcoming_shows": get_num_upcoming_shows_by_artist(artist),
             }
         )
     return render_template("pages/artists.html", artists=data)
@@ -616,46 +634,34 @@ def artists():
 
 @app.route("/artists/<int:artist_id>")
 def show_artist(artist_id):
-    # shows the venue page with the given venue_id
     artist = db.session.query(Artist).filter(Artist.id == artist_id).first()
     if not artist:
         return render_template("errors/404.html"), 404
-    else:
-        artist_shows = (
-            db.session.query(
-                Show.venue_id, Venue.name, Venue.image_link, Show.start_time
-            )
-            .join(Venue)
-            .filter(Show.artist_id == artist.id)
-        )
 
-        genre_list = []
-        for genre in artist.genres:
-            genre_list.append(
-                db.session.query(Genre.name).filter(Genre.id == genre.id).first().name
-            )
+    artist_shows = get_shows_by_artist(artist)
 
-        upcoming_shows = []
-        past_shows = []
-        for show in artist_shows:
-            if show.start_time > datetime.now(timezone.utc):
-                upcoming_shows.append(
-                    {
-                        "venue_id": show.venue_id,
-                        "venue_name": show.name,
-                        "venue_image_link": show.image_link,
-                        "start_time": show.start_time.strftime("%m/%d/%y, %H:%M"),
-                    }
-                )
-            else:
-                past_shows.append(
-                    {
-                        "venue_id": show.venue_id,
-                        "venue_name": show.name,
-                        "venue_image_link": show.image_link,
-                        "start_time": show.start_time.strftime("%m/%d/%y, %H:%M"),
-                    }
-                )
+    genre_list = []
+    for genre in artist.genres:
+        genre_list.append(genre.name)
+
+    upcoming_shows = []
+    past_shows = []
+    for show in artist_shows:
+        show_details = {
+            "venue_id": show.venue_id,
+            "venue_name": show.name,
+            "venue_image_link": show.image_link,
+            "start_time": show.start_time.strftime("%m/%d/%y, %H:%M"),
+        }
+        if show.start_time > datetime.now(timezone.utc):
+            upcoming_shows.append(show_details)
+        else:
+            past_shows.append(show_details)
+
+    past_shows_count = artist_shows.filter(Show.start_time <= datetime.today()).count()
+    upcoming_shows_count = artist_shows.filter(
+        Show.start_time > datetime.today()
+    ).count()
     data = {
         "id": artist.id,
         "name": artist.name,
@@ -670,12 +676,8 @@ def show_artist(artist_id):
         "image_link": artist.image_link,
         "past_shows": past_shows,
         "upcoming_shows": upcoming_shows,
-        "past_shows_count": artist_shows.filter(
-            Show.start_time <= datetime.today()
-        ).count(),
-        "upcoming_shows_count": artist_shows.filter(
-            Show.start_time > datetime.today()
-        ).count(),
+        "past_shows_count": past_shows_count,
+        "upcoming_shows_count": upcoming_shows_count,
     }
     return render_template("pages/show_artist.html", artist=data)
 
