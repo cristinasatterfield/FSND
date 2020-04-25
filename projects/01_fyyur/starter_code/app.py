@@ -269,6 +269,19 @@ def get_shows_at_venue(venue):
     )
 
 
+def build_venue_data_short(venues):
+    venue_data = []
+    for venue in venues:
+        venue_data.append(
+            {
+                "id": venue.id,
+                "name": venue.name,
+                "num_upcoming_shows": get_num_upcoming_shows_by_venue(venue),
+            }
+        )
+    return venue_data
+
+
 # ----------------------------------------------------------------------------#
 # Artist Repository
 # ----------------------------------------------------------------------------#
@@ -363,15 +376,7 @@ def venues():
     data = []
     for area in areas:
         venues = get_venues_in_area(area)
-        venue_data = []
-        for venue in venues:
-            venue_data.append(
-                {
-                    "id": venue.id,
-                    "name": venue.name,
-                    "num_upcoming_shows": get_num_upcoming_shows_by_venue(venue),
-                }
-            )
+        venue_data = build_venue_data_short(venues)
         data.append(
             {"city": area.city, "state": area.state, "venues": venue_data,}
         )
@@ -441,22 +446,9 @@ def search_venues():
         Venue.name.ilike(f"%{search_term}%")
     )
 
-    venue_data = []
-    for venue in venues:
-        venue_data.append(
-            {
-                "id": venue.id,
-                "name": venue.name,
-                "num_upcoming_shows": db.session.query(Show.venue_id)
-                .filter(Show.venue_id == venue.id)
-                .filter(Show.start_time > datetime.today())
-                .count(),
-            }
-        )
-
     response = {
         "count": venues.count(),
-        "data": venue_data,
+        "data": build_venue_data_short(venues),
     }
     return render_template(
         "pages/search_venues.html",
