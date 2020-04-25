@@ -628,17 +628,8 @@ def create_artist_submission():
 @app.route("/artists")
 def artists():
     artists = db.session.query(Artist.id, Artist.name).all()
-    data = []
-
-    for artist in artists:
-        data.append(
-            {
-                "id": artist.id,
-                "name": artist.name,
-                "num_upcoming_shows": get_num_upcoming_shows_by_artist(artist),
-            }
-        )
-    return render_template("pages/artists.html", artists=data)
+    artist_data = build_artist_data_short(artists)
+    return render_template("pages/artists.html", artists=artist_data)
 
 
 @app.route("/artists/<int:artist_id>")
