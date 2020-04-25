@@ -709,24 +709,39 @@ def search_artists():
 # ----------------------------------------------------------------------------#
 #  Update Arists
 # ----------------------------------------------------------------------------#
+
+
 @app.route("/artists/<int:artist_id>/edit", methods=["GET"])
-def edit_artist(artist_id):
-    form = ArtistForm()
-    artist = {
-        "id": 4,
-        "name": "Guns N Petals",
-        "genres": ["Rock n Roll"],
-        "city": "San Francisco",
-        "state": "CA",
-        "phone": "326-123-5000",
-        "website": "https://www.gunsnpetalsband.com",
-        "facebook_link": "https://www.facebook.com/GunsNPetals",
-        "seeking_venue": True,
-        "seeking_description": "Looking for shows to perform at in the San Francisco Bay Area!",
-        "image_link": "https://images.unsplash.com/photo-1549213783-8284d0336c4f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80",
+def edit_artist_form(artist_id):
+    artist_query = db.session.query(Artist).filter(Artist.id == artist_id).first()
+
+    if not artist_query:
+        return render_template("errors/404.html"), 404
+
+    genre_list = []
+    for genre in artist_query.genres:
+        genre_list.append(genre.id)
+
+    artist_data = {
+        "id": artist_query.id,
+        "name": artist_query.name,
+        "genres": genre_list,
+        "city": artist_query.city,
+        "state": artist_query.state,
+        "phone": artist_query.phone,
+        "website_link": artist_query.website_link,
+        "facebook_link": artist_query.facebook_link,
+        "seeking_venue": artist_query.seeking_venue,
+        "seeking_description": artist_query.seeking_description,
+        "image_link": artist_query.image_link,
     }
-    # TODO: populate form with fields from artist with ID <artist_id>
-    return render_template("forms/edit_artist.html", form=form, artist=artist)
+
+    form = ArtistForm(data=artist_data)
+
+    genres = Genre.query.order_by("name").all()
+    form.genres.choices = build_genres_choices(genres)
+
+    return render_template("forms/edit_artist.html", form=form, artist=artist_data)
 
 
 @app.route("/artists/<int:artist_id>/edit", methods=["POST"])
