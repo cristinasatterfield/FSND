@@ -4,16 +4,17 @@
 <div class="form-wrapper">
   <form method="post" class="form">
     <h3 class="form-heading">List a new show</h3>
+    <p>* indicates a required field</p>
     <div class="form-group">
-      <label for="artist">Artist Name</label>
+      <label for="artist">Artist Name *</label>
       {{ form.artist(class_ = 'form-control', autofocus = true) }}
     </div>
     <div class="form-group">
-      <label for="venue">Venue Name</label>
+      <label for="venue">Venue Name *</label>
       {{ form.venue(class_ = 'form-control', autofocus = true) }}
     </div>
     <div class="form-group">
-      <label for="start_time">Start Time</label>
+      <label for="start_time">Start Time *</label>
       <p><small>Use format: YYYY-MM-DD HH:MM:SS</small></p>
       {{ form.start_time(class_ = 'form-control', placeholder='YYYY-MM-DD HH:MM:SS', autofocus = true) }}
     </div>
