@@ -98,15 +98,14 @@ class Artist(db.Model):
     city = db.Column(db.String(120), nullable=False)
     state = db.Column(db.String(120), nullable=False)
     phone = db.Column(db.String(120), nullable=False)
-    website_link = db.Column(db.String(120), server_default="", nullable=False)
-    facebook_link = db.Column(db.String(120), server_default="", nullable=False)
+    website_link = db.Column(db.String(120))
+    facebook_link = db.Column(db.String(120))
     seeking_venue = db.Column(
         db.Boolean, nullable=False, server_default="false", default=False
     )
-    seeking_description = db.Column(db.String(500), nullable=False, server_default="")
+    seeking_description = db.Column(db.String(500))
     image_link = db.Column(
         db.String(500),
-        nullable=False,
         server_default="http://images.pexels.com/photos/14166/pexels-photo-14166.jpeg?auto=compress&cs=tinysrgb&dpr=3&h=750&w=1260",
     )
     shows = db.relationship("Show", backref=db.backref("artist", lazy=True),)
