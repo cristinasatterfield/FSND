@@ -746,8 +746,51 @@ def edit_artist_form(artist_id):
 
 @app.route("/artists/<int:artist_id>/edit", methods=["POST"])
 def edit_artist_submission(artist_id):
-    # TODO: take values from the form submitted, and update existing
-    # artist record with ID <artist_id> using the new attributes
+    genres = Genre.query.order_by("name").all()
+    genre_choices = build_genres_choices(genres)
+
+    form = ArtistForm()
+    form.genres.choices = genre_choices
+
+    artist_query = db.session.query(Artist).filter(Artist.id == artist_id).first()
+
+    if not form.validate_on_submit():
+        flash_form_errors(form, "Failed to update Artist")
+        return render_template("forms/edit_artist.html", form=form, artist=artist_query)
+
+    data = request.form
+    try:
+        # Only update db if description exists.
+        # No description, returns NULL, violating the constraint on the Venue model.
+        seeking_description = data.get("seeking_description")
+        if seeking_description:
+            artist_query.seeking_description = seeking_description
+
+        artist_query.name = data["name"]
+        artist_query.city = data["city"]
+        artist_query.state = data["state"]
+        artist_query.phone = data["phone"]
+        artist_query.website_link = data["website_link"]
+        artist_query.facebook_link = data["facebook_link"]
+        artist_query.seeking_venue = data["seeking_venue"] == "True"
+        artist_query.image_link = data["image_link"]
+
+        # On edit, genre associations in db are overwritten.
+        # This could cause problems if mult. people edit the same venue at the same time
+        artist_query.genres = []
+        genres = data.getlist("genres")
+        add_genres_to_model(genres, artist_query)
+
+        db.session.commit()
+
+        flash(f"Artist '{data['name']}' was successfully updated!")
+    except:
+        db.session.rollback()
+        print(sys.exc_info())
+
+        flash(f"An error occurred. Artist '{artist_query.name}' could not be updated.")
+    finally:
+        db.session.close()
 
     return redirect(url_for("show_artist", artist_id=artist_id))
 
