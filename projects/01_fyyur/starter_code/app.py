@@ -108,7 +108,12 @@ class Artist(db.Model):
         db.String(500),
         server_default="http://images.pexels.com/photos/14166/pexels-photo-14166.jpeg?auto=compress&cs=tinysrgb&dpr=3&h=750&w=1260",
     )
-    shows = db.relationship("Show", backref=db.backref("artist", lazy=True),)
+    shows = db.relationship(
+        "Show",
+        single_parent=True,
+        cascade="save-update, merge, delete, delete-orphan",
+        backref=db.backref("artist", lazy=True),
+    )
     genres = db.relationship(
         "Genre", secondary=artists_genres, backref=db.backref("artists", lazy=True)
     )
