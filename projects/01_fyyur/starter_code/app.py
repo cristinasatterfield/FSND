@@ -82,7 +82,12 @@ class Show(db.Model):
         db.Integer, db.ForeignKey("venues.id", ondelete="cascade"), primary_key=True
     )
     start_time = db.Column(db.DateTime(timezone=True), nullable=False, primary_key=True)
-    venues = db.relationship("Venue", backref=db.backref("show", lazy=True))
+    venues = db.relationship(
+        "Venue",
+        backref=db.backref(
+            "show", cascade="save-update, merge, delete, delete-orphan", lazy=True
+        ),
+    )
 
 
 class Artist(db.Model):
@@ -104,7 +109,7 @@ class Artist(db.Model):
         nullable=False,
         server_default="https://www.pexels.com/photo/mic-microphone-recording-audio-14166/",
     )
-    shows = db.relationship("Show", backref=db.backref("artist", lazy=True))
+    shows = db.relationship("Show", backref=db.backref("artist", lazy=True),)
     genres = db.relationship(
         "Genre", secondary=artists_genres, backref=db.backref("artists", lazy=True)
     )
@@ -325,11 +330,6 @@ def build_artist_data_short(artists):
 @app.route("/")
 def index():
     return render_template("pages/home.html")
-
-
-# ----------------------------------------------------------------------------#
-# Temp
-# ----------------------------------------------------------------------------#
 
 
 # ----------------------------------------------------------------------------#
@@ -564,14 +564,24 @@ def edit_venue_submission(venue_id):
 # ----------------------------------------------------------------------------#
 
 
-@app.route("/venues/<venue_id>", methods=["DELETE"])
+@app.route("/venues/<int:venue_id>", methods=["DELETE"])
 def delete_venue(venue_id):
-    # TODO: Complete this endpoint for taking a venue_id, and using
-    # SQLAlchemy ORM to delete a record. Handle cases where the session commit could fail.
+    try:
+        venue = Venue.query.get(venue_id)
+        db.session.delete(venue)
 
-    # BONUS CHALLENGE: Implement a button to delete a Venue on a Venue Page, have it so that
-    # clicking that button delete it from the db then redirect the user to the homepage
-    return None
+        db.session.commit()
+
+        flash("Venue was successfully deleted.")
+    except:
+        db.session.rollback()
+        print(sys.exc_info())
+
+        flash(f"An error occured. Venue '{venue.name}' could not be deleted.")
+    finally:
+        db.session.close()
+
+    return redirect(url_for("index"))
 
 
 # ----------------------------------------------------------------------------#
