@@ -123,15 +123,14 @@ class Venue(db.Model):
     state = db.Column(db.String(120), nullable=False)
     address = db.Column(db.String(120), nullable=False)
     phone = db.Column(db.String(120), nullable=False)
-    website_link = db.Column(db.String(120), server_default="", nullable=False)
-    facebook_link = db.Column(db.String(120), server_default="", nullable=False)
+    website_link = db.Column(db.String(120))
+    facebook_link = db.Column(db.String(120))
     seeking_talent = db.Column(
         db.Boolean, nullable=False, server_default="false", default=False
     )
-    seeking_description = db.Column(db.String(500), nullable=False, server_default="")
+    seeking_description = db.Column(db.String(500))
     image_link = db.Column(
         db.String(500),
-        nullable=False,
         server_default="https://images.all-free-download.com/images/graphiclarge/scene_layout_04_hd_picture_167802.jpg",
     )
     genres = db.relationship(
