@@ -40,17 +40,15 @@
       <i class="fas fa-moon"></i> Not currently seeking performance venues
     </p>
     {% endif %}
-    <h3>
-      <a href="/artists/{{ artist.id }}/edit">
-        <button class="btn btn-primary btn-lg">Edit Artist</button>
-      </a>
-      <!-- <a href="">
-        <button class="btn btn-default btn-lg">Delete Artist</button>
-      </a> -->
-    </h3>
+    <div class="row">
+      <h3>
+        <a href="/artists/{{ artist.id }}/edit"><button class="btn btn-primary btn-lg">Edit Artist</button></a>
+        <button id="delete-btn" class="btn btn-default btn-lg">Delete Artist</button>
+      </h3>
+    </div>
   </div>
   <div class="col-sm-6">
-    <img src="{{ artist.image_link }}" alt="Venue Image" />
+    <img src="{{ artist.image_link }}" alt="Artist Image" />
   </div>
 </div>
 <section>
@@ -83,5 +81,13 @@
     {% endfor %}
   </div>
 </section>
+<script>
+  const delete_btn = document.getElementById("delete-btn")
+  delete_btn.onclick = function (e) {
+    fetch("/artists/{{ artist.id }}", { method: "DELETE" }).then(function () {
+      window.location.href = '/';
+    })
+  }
 
+</script>
 {% endblock %}

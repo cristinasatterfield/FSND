@@ -107,7 +107,7 @@ class Artist(db.Model):
     image_link = db.Column(
         db.String(500),
         nullable=False,
-        server_default="https://www.pexels.com/photo/mic-microphone-recording-audio-14166/",
+        server_default="http://images.pexels.com/photos/14166/pexels-photo-14166.jpeg?auto=compress&cs=tinysrgb&dpr=3&h=750&w=1260",
     )
     shows = db.relationship("Show", backref=db.backref("artist", lazy=True),)
     genres = db.relationship(
@@ -217,8 +217,9 @@ def build_artist_from_form(artist_form, artist):
     artist.facebook_link = artist_form["facebook_link"]
     artist.seeking_venue = artist_form["seeking_venue"] == "True"
     artist.seeking_description = artist_form.get("seeking_description")
-    artist.image_link = artist_form["image_link"]
-
+    # If no user input exists, default will be set by the db constraint on the model.
+    if artist_form["image_link"]:
+        artist.image_link = artist_form["image_link"]
     genre_ids = artist_form.getlist("genres")
     add_genres_to_model(genre_ids, artist)
     return artist
@@ -810,14 +811,24 @@ def edit_artist_submission(artist_id):
 # ----------------------------------------------------------------------------#
 
 
-@app.route("/artists/<artist_id>", methods=["DELETE"])
+@app.route("/artists/<int:artist_id>", methods=["DELETE"])
 def delete_artist(artist_id):
-    # TODO: Complete this endpoint for taking an artist_id, and using
-    # SQLAlchemy ORM to delete a record. Handle cases where the session commit could fail.
+    try:
+        artist = Artist.query.get(artist_id)
+        db.session.delete(artist)
 
-    # BONUS CHALLENGE: Implement a button to delete an Artist on an Artist Page, have it so that
-    # clicking that button delete it from the db then redirect the user to the homepage
-    return None
+        db.session.commit()
+
+        flash("Artist was successfully deleted.")
+    except:
+        db.session.rollback()
+        print(sys.exc_info())
+
+        flash(f"An error occured. Artist '{artist.name}' could not be deleted.")
+    finally:
+        db.session.close()
+
+    return redirect(url_for("index"))
 
 
 # ----------------------------------------------------------------------------#
