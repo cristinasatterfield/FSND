@@ -368,12 +368,12 @@ def create_venue_submission():
         db.session.add(new_venue)
         db.session.commit()
 
-        flash("Venue " + data["name"] + " was successfully listed!")
+        flash(f"Venue '{data['name']}' was successfully listed!")
     except:
         db.session.rollback()
         print(sys.exc_info())
 
-        flash("An error occurred. Venue " + data["name"] + " could not be listed.")
+        flash(f"An error occurred. Venue '{data['name']}' could not be listed.")
     finally:
         db.session.close()
 
@@ -549,7 +549,7 @@ def edit_venue_submission(venue_id):
 
         db.session.commit()
 
-        flash("Venue '" + data["name"] + "' was successfully updated!")
+        flash(f"Venue '{data['name']}' was successfully updated!")
     except:
         db.session.rollback()
         print(sys.exc_info())
@@ -620,12 +620,12 @@ def create_artist_submission():
         db.session.add(new_artist)
         db.session.commit()
 
-        flash("Artist " + data["name"] + " was successfully listed!")
+        flash(f"Artist '{data['name']}' was successfully listed!")
     except:
         db.session.rollback()
         print(sys.exc_info())
 
-        flash("An error has occured. Artist " + data["name"] + " could not be listed.")
+        flash(f"An error has occured. Artist '{data['name']}' could not be listed.")
     finally:
         db.session.close()
 
