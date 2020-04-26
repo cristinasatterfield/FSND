@@ -167,17 +167,17 @@ app.jinja_env.filters["datetime"] = format_datetime
 # ----------------------------------------------------------------------------#
 
 
-def build_genres_choices(genres):
+def build_choices_from_query(query):
     """
-    Build genre id and name pair for form validation.
+    Build id and name pairs for form validation.
 
-    We need this to dynamically load genre options from the database into the frontend.
+    We need this to dynamically load options from the database into the frontend.
     """
-    genre_choices = []
-    for genre in genres:
-        choice = (genre.id, genre.name)
-        genre_choices.append(choice)
-    return genre_choices
+    choices = []
+    for result in query:
+        choice = (result.id, result.name)
+        choices.append(choice)
+    return choices
 
 
 def add_genres_to_model(genre_ids, model):
@@ -342,7 +342,7 @@ def index():
 @app.route("/venues/create", methods=["GET"])
 def create_venue_form():
     genres = Genre.query.order_by("name").all()
-    genre_choices = build_genres_choices(genres)
+    genre_choices = build_choices_from_query(genres)
 
     form = VenueForm()
     form.genres.choices = genre_choices
@@ -352,7 +352,7 @@ def create_venue_form():
 @app.route("/venues/create", methods=["POST"])
 def create_venue_submission():
     genres = Genre.query.order_by("name").all()
-    genre_choices = build_genres_choices(genres)
+    genre_choices = build_choices_from_query(genres)
 
     form = VenueForm()
     form.genres.choices = genre_choices
@@ -504,7 +504,7 @@ def edit_venue_form(venue_id):
     form = VenueForm(data=venue_data)
 
     genres = Genre.query.order_by("name").all()
-    form.genres.choices = build_genres_choices(genres)
+    form.genres.choices = build_choices_from_query(genres)
 
     return render_template("forms/edit_venue.html", form=form, venue=venue_data)
 
@@ -512,7 +512,7 @@ def edit_venue_form(venue_id):
 @app.route("/venues/<int:venue_id>/edit", methods=["POST"])
 def edit_venue_submission(venue_id):
     genres = Genre.query.order_by("name").all()
-    genre_choices = build_genres_choices(genres)
+    genre_choices = build_choices_from_query(genres)
 
     form = VenueForm()
     form.genres.choices = genre_choices
@@ -594,7 +594,7 @@ def delete_venue(venue_id):
 @app.route("/artists/create", methods=["GET"])
 def create_artist_form():
     genres = Genre.query.order_by("name").all()
-    genre_choices = build_genres_choices(genres)
+    genre_choices = build_choices_from_query(genres)
 
     form = ArtistForm()
     form.genres.choices = genre_choices
@@ -604,7 +604,7 @@ def create_artist_form():
 @app.route("/artists/create", methods=["POST"])
 def create_artist_submission():
     genres = Genre.query.order_by("name").all()
-    genre_choices = build_genres_choices(genres)
+    genre_choices = build_choices_from_query(genres)
 
     form = ArtistForm()
     form.genres.choices = genre_choices
@@ -751,7 +751,7 @@ def edit_artist_form(artist_id):
     form = ArtistForm(data=artist_data)
 
     genres = Genre.query.order_by("name").all()
-    form.genres.choices = build_genres_choices(genres)
+    form.genres.choices = build_choices_from_query(genres)
 
     return render_template("forms/edit_artist.html", form=form, artist=artist_data)
 
@@ -759,7 +759,7 @@ def edit_artist_form(artist_id):
 @app.route("/artists/<int:artist_id>/edit", methods=["POST"])
 def edit_artist_submission(artist_id):
     genres = Genre.query.order_by("name").all()
-    genre_choices = build_genres_choices(genres)
+    genre_choices = build_choices_from_query(genres)
 
     form = ArtistForm()
     form.genres.choices = genre_choices
@@ -835,53 +835,53 @@ def delete_artist(artist_id):
 # ----------------------------------------------------------------------------#
 #  Create Shows
 # ----------------------------------------------------------------------------#
+@app.route("/shows/create", methods=["GET"])
+def create_show_form():
 
-
-@app.route("/shows/create", methods=["GET", "POST"])
-def create_show_submission():
-    artists = Artist.query.order_by("name").all()
-    artist_choices = []
-    for artist in artists:
-        choice = (artist.id, artist.name)
-        artist_choices.append(choice)
-    venues = Venue.query.order_by("name").all()
-    venue_choices = []
-    for venue in venues:
-        choice = (venue.id, venue.name)
-        venue_choices.append(choice)
     form = ShowForm()
-    form.artist.choices = artist_choices
-    form.venue.choices = venue_choices
-    if form.validate_on_submit():
-        error = False
-        data = request.form
-        try:
-            artist_id = data["artist"]
-            venue_id = data["venue"]
-            start_time = datetime.strptime(data["start_time"], "%Y-%m-%d %H:%M:%S")
-            new_show = Show(
-                artist_id=artist_id, venue_id=venue_id, start_time=start_time
-            )
-            db.session.add(new_show)
-            db.session.commit()
-        except:
-            error = True
-            db.session.rollback()
-            print(sys.exc_info())
-        finally:
-            db.session.close()
-        if error:
-            flash("An error has occured. Show could not be listed.")
-        else:
-            # on successful db insert, flash success
-            flash("Show was successfully listed!")
-        return render_template("pages/home.html")
-    elif request.method == "POST":
-        flash("Failed to create show.")
-        for fieldName, errorMessages in form.errors.items():
-            for err in errorMessages:
-                flash(err)
+
+    artists = Artist.query.order_by("name").all()
+    form.artist.choices = build_choices_from_query(artists)
+
+    venues = Venue.query.order_by("name").all()
+    form.venue.choices = build_choices_from_query(venues)
+
     return render_template("forms/new_show.html", form=form)
+
+
+@app.route("/shows/create", methods=["POST"])
+def create_show_submission():
+    form = ShowForm()
+
+    artists = Artist.query.order_by("name").all()
+    form.artist.choices = build_choices_from_query(artists)
+
+    venues = Venue.query.order_by("name").all()
+    form.venue.choices = build_choices_from_query(venues)
+
+    if not form.validate_on_submit():
+        flash_form_errors(form, "Failed to create a show.")
+        return render_template("forms/new_show.html", form=form)
+
+    data = request.form
+    try:
+        new_show = Show(
+            artist_id=data["artist"],
+            venue_id=data["venue"],
+            start_time=datetime.strptime(data["start_time"], "%Y-%m-%d %H:%M:%S"),
+        )
+        db.session.add(new_show)
+        db.session.commit()
+
+        flash("Show was successfully listed!")
+    except:
+        db.session.rollback()
+        print(sys.exc_info())
+
+        flash("An error has occured. Show could not be listed.")
+    finally:
+        db.session.close()
+    return render_template("pages/home.html")
 
 
 # ----------------------------------------------------------------------------#
