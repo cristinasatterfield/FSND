@@ -201,7 +201,9 @@ def build_venue_from_form(venue_form, venue):
     venue.facebook_link = venue_form["facebook_link"]
     venue.seeking_talent = venue_form["seeking_talent"] == "True"
     venue.seeking_description = venue_form.get("seeking_description")
-    venue.image_link = venue_form["image_link"]
+    # If no user input exists, default will be set by the db constraint on the model.
+    if venue_form["image_link"]:
+        venue.image_link = venue_form["image_link"]
 
     genre_ids = venue_form.getlist("genres")
     add_genres_to_model(genre_ids, venue)
@@ -220,6 +222,7 @@ def build_artist_from_form(artist_form, artist):
     # If no user input exists, default will be set by the db constraint on the model.
     if artist_form["image_link"]:
         artist.image_link = artist_form["image_link"]
+
     genre_ids = artist_form.getlist("genres")
     add_genres_to_model(genre_ids, artist)
     return artist
