@@ -132,12 +132,18 @@ To start and run the local development server,
   ```
   $ pip install -r requirements.txt
   ```
+3. Update SQLALCHEMY_DATABASE_URI in config.py to connect to your database.
 
-3. Run the development server:
+4. Apply database migrations:
+  ```
+  $ flask db upgrade
+  ```
+
+5. Run the development server:
   ```
   $ export FLASK_APP=app.py
   $ export FLASK_ENV=development # enables debug mode
   $ python3 app.py
   ```
 
-4. Navigate to Home page [http://localhost:5000](http://localhost:5000)
+6. Navigate to Home page [http://localhost:5000](http://localhost:5000)
