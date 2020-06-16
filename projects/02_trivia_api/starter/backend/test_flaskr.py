@@ -37,11 +37,12 @@ class TriviaTestCase(unittest.TestCase):
     """
 
     def test_get_paginated_questions(self):
-        """ Test if questions can be retieved  """
-        result = self.client().get("/questions")
-        data = json.loads(result.data)
+        """ Test if questions can be retrieved  """
+        response = self.client().get("/questions")
+        self.assertEqual(response.status_code, 200)
 
-        self.assertEqual(result.status_code, 200)
+        data = json.loads(response.data)
+
         self.assertTrue(len(data["questions"]))
         self.assertTrue(data["total_questions"])
         self.assertTrue(data["current_category"])
