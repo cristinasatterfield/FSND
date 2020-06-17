@@ -45,7 +45,7 @@ class TriviaTestCase(unittest.TestCase):
 
         self.assertTrue(len(data["questions"]))
         self.assertTrue(data["total_questions"])
-        self.assertTrue(data["current_category"])
+        self.assertIsNone(data["current_category"])
         self.assertTrue(len(data["categories"]))
 
 
