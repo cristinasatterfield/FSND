@@ -39,10 +39,10 @@ class TriviaTestCase(unittest.TestCase):
     def test_get_paginated_questions(self):
         """ Test if questions can be retrieved  """
         response = self.client().get("/questions")
-        self.assertEqual(response.status_code, 200)
+        self.assertTrue(is_json(response.data), "invalid JSON")
 
         data = json.loads(response.data)
-
+        self.assertEqual(response.status_code, 200)
         self.assertTrue(len(data["questions"]))
         self.assertTrue(data["total_questions"])
         self.assertIsNone(data["current_category"])
@@ -51,11 +51,22 @@ class TriviaTestCase(unittest.TestCase):
     def test_404_sent_requesting_beyond_valid_page(self):
         """ Test if 404 error when the page is invalid """
         response = self.client().get("/questions?page=1000")
+        self.assertTrue(is_json(response.data), "invalid JSON")
+
         data = json.loads(response.data)
 
         self.assertEqual(response.status_code, 404)
         self.assertEqual(data["success"], False)
         self.assertEqual(data["message"], "resource not found")
+
+
+# check if string is JSON
+def is_json(data):
+    try:
+        json.loads(data)
+    except ValueError as e:
+        return False
+    return True
 
 
 # Make the tests conveniently executable
