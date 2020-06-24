@@ -37,7 +37,7 @@ class TriviaTestCase(unittest.TestCase):
     """
 
     def test_get_paginated_questions(self):
-        """ Test if questions can be retrieved  """
+        """ Test if questions can be retrieved """
         response = self.client().get("/questions")
         self.assertTrue(is_json(response.data), "invalid JSON")
 
@@ -58,6 +58,15 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 404)
         self.assertEqual(data["success"], False)
         self.assertEqual(data["message"], "resource not found")
+
+    def test_get_categories(self):
+        """ Test if categories can be retrieved """
+        response = self.client().get("/categories")
+        self.assertTrue(is_json(response.data), "invalid JSON")
+
+        data = json.loads(response.data)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(len(data["categories"]))
 
 
 # check if string is JSON
