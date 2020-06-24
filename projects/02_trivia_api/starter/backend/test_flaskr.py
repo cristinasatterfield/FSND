@@ -69,6 +69,7 @@ class TriviaTestCase(unittest.TestCase):
         self.assertTrue(len(data["categories"]))
 
     def test_delete_question(self):
+        """ Test if a given question can be deleted """
         response = self.client().delete("/questions/4")
         self.assertTrue(is_json(response.data), "invalid JSON")
 
@@ -83,6 +84,17 @@ class TriviaTestCase(unittest.TestCase):
         self.assertTrue(data["total_questions"])
         self.assertIsNone(data["current_category"])
         self.assertTrue(len(data["categories"]))
+
+    def test_422_if_question_does_not_exist(self):
+        """ Test if 422 error when question id is invalid """
+        response = self.client().delete("/questions/10000")
+        self.assertTrue(is_json(response.data), "invalid JSON")
+
+        data = json.loads(response.data)
+
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(data["success"], False)
+        self.assertEqual(data["message"], "unprocessable")
 
 
 # check if string is JSON
