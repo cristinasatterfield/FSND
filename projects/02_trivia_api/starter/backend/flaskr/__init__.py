@@ -118,7 +118,8 @@ def create_app(test_config=None):
                     },
                 }
             )
-        except:
+        except Exception as e:
+            print(e)
             abort(422)
 
     """
