@@ -20,6 +20,13 @@ class TriviaTestCase(unittest.TestCase):
         )
         setup_db(self.app, self.database_path)
 
+        self.new_question = {
+            "question": "Located in Cambodia, what is the largest religious monument in the world?",
+            "answer": "Angkor Wat",
+            "category": 3,
+            "difficulty": 3,
+        }
+
         # binds the app to the current context
         with self.app.app_context():
             self.db = SQLAlchemy()
@@ -95,6 +102,21 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 422)
         self.assertEqual(data["success"], False)
         self.assertEqual(data["message"], "unprocessable")
+
+    def test_create_new_question(self):
+        """ Test if a new question can be created and added to the db """
+        response = self.client().post("/questions", json=self.new_question)
+        self.assertTrue(is_json(response.data), "invalid JSON")
+
+        data = json.loads(response.data)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(data["success"], True)
+        self.assertTrue(data["created_id"])
+        self.assertTrue(len(data["questions"]))
+        self.assertTrue(data["total_questions"])
+        self.assertIsNone(data["current_category"])
+        self.assertTrue(len(data["categories"]))
 
 
 # check if string is JSON
