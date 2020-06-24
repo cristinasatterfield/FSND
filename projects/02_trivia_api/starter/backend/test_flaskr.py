@@ -68,6 +68,22 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(len(data["categories"]))
 
+    def test_delete_question(self):
+        response = self.client().delete("/questions/4")
+        self.assertTrue(is_json(response.data), "invalid JSON")
+
+        data = json.loads(response.data)
+
+        question = Question.query.filter(Question.id == 4).one_or_none()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(data["success"], True)
+        self.assertEqual(data["deleted_id"], 4)
+        self.assertTrue(len(data["questions"]))
+        self.assertTrue(data["total_questions"])
+        self.assertIsNone(data["current_category"])
+        self.assertTrue(len(data["categories"]))
+
 
 # check if string is JSON
 def is_json(data):
