@@ -118,6 +118,17 @@ class TriviaTestCase(unittest.TestCase):
         self.assertIsNone(data["current_category"])
         self.assertTrue(len(data["categories"]))
 
+    def test_405_if_question_creation_not_allowed(self):
+        """ Test if 405 error when method is invalid """
+        response = self.client().post("/questions/45", json=self.new_question)
+        self.assertTrue(is_json(response.data), "invalid JSON")
+
+        data = json.loads(response.data)
+
+        self.assertEqual(response.status_code, 405)
+        self.assertEqual(data["success"], False)
+        self.assertEqual(data["message"], "method not allowed")
+
 
 # check if string is JSON
 def is_json(data):
