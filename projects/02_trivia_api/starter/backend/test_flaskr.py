@@ -143,6 +143,34 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data["current_category"], 1)
         self.assertTrue(len(data["categories"]))
 
+    def test_get_question_search_with_results(self):
+        """ Test if questions can be retrieved via a search term """
+        response = self.client().post("/questions-search", json={"searchTerm": "title"})
+        self.assertTrue(is_json(response.data), "invalid JSON")
+
+        data = json.loads(response.data)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(data["questions"]), 2)
+        self.assertTrue(data["total_questions"])
+        self.assertIsNone(data["current_category"])
+        self.assertTrue(len(data["categories"]))
+
+    def test_get_question_search_without_results(self):
+        """ Test if nothing is returned when no questions match the search term """
+        response = self.client().post(
+            "/questions-search", json={"searchTerm": "asdfghjkl;"}
+        )
+        self.assertTrue(is_json(response.data), "invalid JSON")
+
+        data = json.loads(response.data)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(data["questions"]), 0)
+        self.assertEqual(data["total_questions"], 0)
+        self.assertIsNone(data["current_category"])
+        self.assertTrue(len(data["categories"]))
+
 
 # check if string is JSON
 def is_json(data):
