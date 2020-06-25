@@ -129,6 +129,20 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data["success"], False)
         self.assertEqual(data["message"], "method not allowed")
 
+    def test_get_questions_by_categories(self):
+        """ Test if questions can be retrieved by categories """
+        response = self.client().get("/categories/1/questions")
+
+        self.assertTrue(is_json(response.data), "invalid JSON")
+
+        data = json.loads(response.data)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(len(data["questions"]))
+        self.assertTrue(data["total_questions"])
+        self.assertEqual(data["current_category"], 1)
+        self.assertTrue(len(data["categories"]))
+
 
 # check if string is JSON
 def is_json(data):
