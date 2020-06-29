@@ -171,6 +171,30 @@ class TriviaTestCase(unittest.TestCase):
         self.assertIsNone(data["current_category"])
         self.assertTrue(len(data["categories"]))
 
+    def test_get_quiz_questions_with_category(self):
+        """ Test if questions from a specific category can be retrieved to play the quiz """
+        response = self.client().post(
+            "/quizzes", json={"previous_questions": [], "quiz_category": {"id": 1}}
+        )
+        self.assertTrue(is_json(response.data), "invalid JSON")
+
+        data = json.loads(response.data)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(data["question"], True)
+
+    def test_get_quiz_questions_without_category(self):
+        """ Test if questions from any category can be retrieved to play the quiz """
+        response = self.client().post(
+            "/quizzes", json={"previous_question": [], "quiz_category": {"id": 0}}
+        )
+        self.assertTrue(is_json(response.data), "invalid JSON")
+
+        data = json.loads(response.data)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(data["question"], True)
+
 
 # check if string is JSON
 def is_json(data):
