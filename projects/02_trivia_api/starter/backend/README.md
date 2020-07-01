@@ -70,8 +70,6 @@ One note before you delve into your tasks: for each endpoint you are expected to
 
 ## API Reference
 
----
-
 ### Getting started
 
 -   **Base URL**: At present, this application can only be run locally and is not hosted at a base URL. The backend application is hosted at the default `http://127.0.0.1:5000/`, which is set as a proxy in the front-end configuration.
